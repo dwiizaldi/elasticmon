@@ -7,7 +7,6 @@ import socket
 import time
 
 ElasticMON_URL="192.168.12.98:9200"
-#url_flexran = "http://192.168.12.94:9999"
 url_flexran = "http://192.168.12.98:9999"
 
 app = Flask(__name__)
