@@ -31,7 +31,7 @@ def enb_query_value(query, value):
         try:
             if value == 'rb':
                 result['resource_block'] = init.get_cell_rb(enb, cc, dir)
-            if value == 'max_mcs':
+            elif value == 'max_mcs':
                 result['maximum_MCS'] = init.get_cell_maxmcs(enb, cc, dir)
             else:
                 result['message'] = ['variable not exist']
@@ -41,6 +41,8 @@ def enb_query_value(query, value):
             return json.dumps(result), 400
 
     elif (query == 'interval') or (query == 'average'):
+        print query
+        print value
         init = elasticmon_sdk_git.get_enb_config(ElasticMON_URL, query, start, end)
         if query == 'interval':
             result['date_time'] = init.get_date_time()
@@ -57,10 +59,13 @@ def enb_query_value(query, value):
             except:
                 result['error'] = init.get_error()
                 return json.dumps(result), 400
+            
         elif query == 'average':
             try:
                 if value == 'rb':
-                    result['average_bandwidth'] = (sum(init.get_cell_rb(dir)) / len(init.get_cell_rb(dir)))
+                    result['average_rb'] = (sum(init.get_cell_rb(enb, cc, dir)) / len(init.get_cell_rb(enb, cc, dir)))
+                elif value == 'bw':
+                    result['average_bandwidth'] = (sum(init.get_cell_bw(enb, cc, dir)) / len(init.get_cell_bw(enb, cc, dir)))
                 else:
                     result['message'] = ['variable not exist']
                 return json.dumps(result), 200
@@ -186,4 +191,3 @@ if __name__ == "__main__":
         sock.close()
         print "Make sure FlexRAN is running!"
         pass
-    
