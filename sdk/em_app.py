@@ -41,8 +41,6 @@ def enb_query_value(query, value):
             return json.dumps(result), 400
 
     elif (query == 'interval') or (query == 'average'):
-        print query
-        print value
         init = elasticmon_sdk_git.get_enb_config(ElasticMON_URL, query, start, end)
         if query == 'interval':
             result['date_time'] = init.get_date_time()
