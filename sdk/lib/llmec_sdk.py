@@ -7,7 +7,7 @@ class llmec_api(object):
     all_stats = '/stats'
 
 
-class get_stats(object):
+class data_stats(object):
 
     def __init__(self, log, url='http://localhost', port='9999'):
         self.url = url + ':' + port

@@ -1,4 +1,4 @@
-from lib import elasticmon_sdk_git
+from lib import elasticmon_web_sdk_git
 from flask import Flask
 from flask import request
 import json
@@ -17,7 +17,7 @@ def init():
 
 
 @app.route('/enb/get/<string:query>/<string:value>/', methods=['GET'])
-def enb_query_value(query, value):
+def enb_query_value(query, value): # (enb=0, ue=0, key, func, t_start=0, t_end=now, dir='dl')
     result = {}
     start = request.args.get('start', default="1m").encode('ascii', 'ignore')
     end = request.args.get('end', default="0s").encode('ascii', 'ignore')
@@ -26,7 +26,7 @@ def enb_query_value(query, value):
     cc = int(request.args.get('cc', default="0"))
 
     if query == 'latest':
-        init = elasticmon_sdk_git.get_enb_config(ElasticMON_URL, query, "", "")
+        init = elasticmon_web_sdk_git.get_enb_config(ElasticMON_URL, query, "", "")
         result['date_time'] = init.get_date_time()
         try:
             if value == 'rb':
@@ -41,7 +41,7 @@ def enb_query_value(query, value):
             return json.dumps(result), 400
 
     elif (query == 'interval') or (query == 'average'):
-        init = elasticmon_sdk_git.get_enb_config(ElasticMON_URL, query, start, end)
+        init = elasticmon_web_sdk_git.get_enb_config(ElasticMON_URL, query, start, end)
         if query == 'interval':
             result['date_time'] = init.get_date_time()
             try:
@@ -82,7 +82,7 @@ def mac_query_value(query, value):
     dir = request.args.get('dir', default="ul").encode('ascii', 'ignore')
 
     if query == 'latest':
-        init = elasticmon_sdk_git.get_mac_stats(ElasticMON_URL, query, "", "")
+        init = elasticmon_web_sdk_git.get_mac_stats(ElasticMON_URL, query, "", "")
 
         result['date_time'] = init.get_date_time()
         try:
@@ -108,7 +108,7 @@ def mac_query_value(query, value):
             return json.dumps(result), 400
 
     elif (query == 'interval')  or (query == 'average'):
-        init = elasticmon_sdk_git.get_mac_stats(ElasticMON_URL, query, start, end)
+        init = elasticmon_web_sdk_git.get_mac_stats(ElasticMON_URL, query, start, end)
         if query == 'interval':
             result['date_time'] = init.get_date_time()
             try:
