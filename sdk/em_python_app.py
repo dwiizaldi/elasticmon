@@ -16,45 +16,53 @@ args = parser.parse_args()
 
 if args.func == 'average':
     try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_avg()
+        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_avg()
     except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_avg()
+        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_avg()
     print args.func + " value is " + str(value)
 
 elif args.func == 'max':
     try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_max()
+        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_max()
     except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_max()
+        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_max()
     print args.func + " value is " + str(value)
 
 elif args.func == 'min':
     try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_min()
+        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_min()
     except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_min()
+        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_min()
     print args.func + " value is " + str(value)
 
 elif args.func == 'count':
     try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_count()
+        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_count()
     except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_count()
+        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_count()
     print args.func + " value is " + str(value)
 
 elif args.func == 'sum':
     try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_sum()
+        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_sum()
     except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, t_start=args.t_start,
-                                            t_end=args.t_end, dir=args.dir).get_sum()
+        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_sum()
     print args.func + " value is " + str(value)
+
+elif args.func == 'latest':
+    if args.key == 'cell_rb':
+        a = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                 t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_cell_rb()
+        print args.func + " value is " + str(a)
+    else:
+        print "yaaaaaa"
