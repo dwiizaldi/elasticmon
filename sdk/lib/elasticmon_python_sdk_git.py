@@ -1,9 +1,18 @@
 import requests
+import pprint
 
 class url_api(object):
 
     url_mac_stats = 'http://192.168.12.98:9200/mac_stats/_search'
     url_enb_config = 'http://192.168.12.98:9200/enb_config/_search'
+
+class check_key(object):
+
+    key_mac_stats = ['rnti', 'phr', 'wbcqi', 'rsrp', 'rsrq', 'enb_sfn', 'pdcp_sfn', 'ue_pdcp_pkt', 'ue_pdcp_pkt_bytes',
+                     'ue_pdcp_pkt_sn', 'ue_pdcp_pkt_w', 'ue_pdcp_pkt_aiat', 'ue_pdcp_pkt_bytes_w', 'ue_pdcp_pkt_aiat_w',
+                     'ue_pdcp_pkt_oo']
+    key_enb_config = ['cell_rb', 'cell_freq', 'cell_power', 'cell_band', 'cell_maxmcs', 'num_enb', 'cell_bw',
+                      'cell_rbg_size']
 
 
 class mac_stats(object):
@@ -18,13 +27,11 @@ class mac_stats(object):
         self.t_start = t_start
         self.t_end = t_end
         self.dir = dir
-        self.path_key = self.get_path_key()
+        self.value_list = []
 
-        if self.func == 'latest':
-            requestbody = {"size": 1, "query": {"constant_score": {"filter": {
-                "bool": {"must": [{"exists": {"field": "eNB_config"}}], "must_not": {"term": {"eNB_config": ""}}}}}},
-                           "sort": {"date_time": {"order": "desc"}}}
-        else:
+        if self.key in check_key.key_mac_stats:
+            self.path_key = self.get_path_key()
+
             requestbody = {"query": {"constant_score": {"filter": {
                 "bool": {"must": [{"range": {"date_time": {"gte": "now", "lt": "now"}}},
                                   {"exists": {"field": "mac_stats.mac_stats"}}],
@@ -43,12 +50,14 @@ class mac_stats(object):
             requestbody['aggs']['value_in_range']['aggs']['stats_value']['stats'][
                 'field'] = "mac_stats.mac_stats." + self.path_key
 
-        try:
-            response = requests.get(url_api.url_mac_stats, headers={'Content-Type': 'application/json'},
-                                    data=str(requestbody).replace("'", '"'))
-            self.data = response.json()
-
-        except:
+            try:
+                response = requests.get(url_api.url_mac_stats, headers={'Content-Type': 'application/json'},
+                                        data=str(requestbody).replace("'", '"'))
+                self.data = response.json()
+            except:
+                error = self.data['error']['root_cause'][0]['reason']
+                return error
+        else:
             error = self.data['error']['root_cause'][0]['reason']
             return error
 
@@ -126,71 +135,75 @@ class mac_stats(object):
     def get_count(self):
         return self.data['aggregations']['value_in_range']['buckets'][0]['stats_value']['count']
 
-    def get_rnti(self):
-        return self.data['hits']['hits'][0]['_source']['mac_stats']['rnti']
-
-    def get_phr(self):
-        return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['phr']
-
-    def get_wbcqi(self):
-        return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['dlCqiReport']['csiReport'][self.ue]['p10csi']['wbCqi']
-
-    def get_rsrp(self):
-        return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['rrcMeasurements']['pcellRsrp']
-
-    def get_rsrq(self):
-        return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['rrcMeasurements']['pcellRsrq']
-
-    def get_enb_sfn(self):
-        return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['dlCqiReport']['sfnSn']
-
-    def get_enb_pdcp_sfn(self):
-        return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['sfn']
-
-    def get_ue_pdcp_pkt(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRx']
-        elif self.dir == 'dl':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTx']
-
-    def get_ue_pdcp_pkt_bytes(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxBytes']
-        elif self.dir == 'dl':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxBytes']
-
-    def get_ue_pdcp_pkt_sn(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxSn']
-        elif self.dir == 'dl':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxSn']
-
-    def get_ue_pdcp_pkt_w(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxW']
-        elif self.dir == 'dl':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxW']
-
-    def get_ue_pdcp_pkt_aiat(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxAiat']
-        elif self.dir == 'dl':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxAiat']
-
-    def get_ue_pdcp_pkt_bytes_w(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxBytesW']
-        elif self.dir == 'dl':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxBytesW']
-
-    def get_ue_pdcp_pkt_aiat_w(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxAiatW']
-        elif self.dir == 'dl':
-            return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxAiatW']
-
-    def get_ue_pdcp_pkt_oo(self):
-        return self.data['hits']['hits'][0]['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxOo']
+    def get_interval(self):
+        for i in self.data['hits']['hits']:
+            if self.key == 'rnti':
+                value = i['_source']['mac_stats']['rnti']
+                self.value_list.append(value)
+            elif self.key == 'phr':
+                value = i['_source']['mac_stats']['mac_stats']['phr']
+                self.value_list.append(value)
+            elif self.key == 'wbcqi':
+                value = i['_source']['mac_stats']['mac_stats']['dlCqiReport']['csiReport'][self.ue]['p10csi']['wbCqi']
+                self.value_list.append(value)
+            elif self.key == 'rsrp':
+                value = i['_source']['mac_stats']['mac_stats']['rrcMeasurements']['pcellRsrp']
+                self.value_list.append(value)
+            elif self.key == 'rsrq':
+                value = i['_source']['mac_stats']['mac_stats']['rrcMeasurements']['pcellRsrq']
+                self.value_list.append(value)
+            elif self.key == 'enb_sfn':
+                value = i['_source']['mac_stats']['mac_stats']['dlCqiReport']['sfnSn']
+                self.value_list.append(value)
+            elif self.key == 'enb_pdcp_sfn':
+                value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['sfn']
+                self.value_list.append(value)
+            elif self.key == 'ue_pdcp_pkt':
+                if self.dir == 'ul':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRx']
+                elif self.dir == 'dl':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTx']
+                self.value_list.append(value)
+            elif self.key == 'ue_pdcp_pkt_bytes':
+                if self.dir == 'ul':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxBytes']
+                elif self.dir == 'dl':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxBytes']
+                self.value_list.append(value)
+            elif self.key == 'ue_pdcp_pkt_sn':
+                if self.dir == 'ul':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxSn']
+                elif self.dir == 'dl':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxSn']
+                self.value_list.append(value)
+            elif self.key == 'ue_pdcp_pkt_w':
+                if self.dir == 'ul':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxW']
+                elif self.dir == 'dl':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxW']
+                self.value_list.append(value)
+            elif self.key == 'ue_pdcp_pkt_aiat':
+                if self.dir == 'ul':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxAiat']
+                elif self.dir == 'dl':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxAiat']
+                self.value_list.append(value)
+            elif self.key == 'ue_pdcp_pkt_bytes_w':
+                if self.dir == 'ul':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxBytesW']
+                elif self.dir == 'dl':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxBytesW']
+                self.value_list.append(value)
+            elif self.key == 'ue_pdcp_pkt_aiat_w':
+                if self.dir == 'ul':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxAiatW']
+                elif self.dir == 'dl':
+                    value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxAiatW']
+                self.value_list.append(value)
+            elif self.key == 'ue_pdcp_pkt_oo':
+                value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxOo']
+                self.value_list.append(value)
+        return self.value_list
 
 
 class enb_config(object):
@@ -205,16 +218,14 @@ class enb_config(object):
         self.t_start = t_start
         self.t_end = t_end
         self.dir = dir
-        self.path_key = self.get_path_key()
+        self.value_list = []
 
-        if self.func == 'latest':
-            requestbody = {"size": 1, "query": {"constant_score": {"filter": {
-                "bool": {"must": [{"exists": {"field": "eNB_config"}}], "must_not": {"term": {"eNB_config": ""}}}}}},
-                           "sort": {"date_time": {"order": "desc"}}}
+        if self.key in check_key.key_enb_config:
+            self.path_key = self.get_path_key()
 
-        else:
-            requestbody = {"size": 1, "query": {"constant_score": {"filter": {"bool": {
-                "must": [{"range": {"date_time": {"gte": "now", "lt": "now"}}}, {"exists": {"field": "eNB_config"}}],
+            requestbody = {"query": {"constant_score": {"filter": {"bool": {
+                "must": [{"range": {"date_time": {"gte": "now", "lt": "now"}}},
+                         {"exists": {"field": "eNB_config"}}],
                 "must_not": {"term": {"eNB_config": ""}}}}}}, "sort": {"date_time": {"order": "asc"}}, "aggs": {
                 "value_in_range": {"date_range": {"field": "date_time", "ranges": {"from": "now", "to": "now"}},
                                    "aggs": {"stats_value": {"stats": {"field": "eNB_config."}}}}}}
@@ -227,12 +238,14 @@ class enb_config(object):
             requestbody['aggs']['value_in_range']['aggs']['stats_value']['stats'][
                 'field'] = "eNB_config." + self.path_key
 
-        try:
-            response = requests.get(url_api.url_enb_config, headers={'Content-Type': 'application/json'},
-                                data=str(requestbody).replace("'", '"'))
-            self.data = response.json()
-
-        except:
+            try:
+                response = requests.get(url_api.url_enb_config, headers={'Content-Type': 'application/json'},
+                                        data=str(requestbody).replace("'", '"'))
+                self.data = response.json()
+            except:
+                error = self.data['error']['root_cause']['reason']
+                return error
+        else:
             error = self.data['error']['root_cause'][0]['reason']
             return error
 
@@ -242,19 +255,18 @@ class enb_config(object):
                 path = 'eNB.cellConfig.ulBandwidth'
             else:
                 path = 'eNB.cellConfig.dlBandwidth'
-        if self.key == 'cell_freq':
+        elif self.key == 'cell_freq':
             if self.dir == 'ul':
                 path = 'eNB.cellConfig.ulFreq'
             else:
                 path = 'eNB.cellConfig.dlFreq'
-        if self.key == 'cell_power':
+        elif self.key == 'cell_power':
             if self.dir == 'ul':
                 path = 'eNB.cellConfig.ulPuschPower'
             else:
                 path = 'eNB.cellConfig.dlPdschPower'
-        if self.key == 'cell_band':
+        elif self.key == 'cell_band':
             path = 'eNB.cellConfig.eutraBand'
-
         return path
 
     def get_avg(self):
@@ -272,76 +284,82 @@ class enb_config(object):
     def get_count(self):
         return self.data['aggregations']['value_in_range']['buckets'][0]['stats_value']['count']
 
-    def get_num_enb(self):
-        return len(self.data['hits']['hits'][0]['_source']['eNB_config'])
-
     def get_cell_rb(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue][
-                'ulBandwidth']
-        if self.dir == 'dl':
-            return self.data['hits']['hits'][0]['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue][
-                'dlBandwidth']
+        rb_list = []
+        # pp = pprint.PrettyPrinter(indent=4)
+        # pp.pprint(self.data)
+        for i in self.data['hits']['hits']:
+            if dir == 'ul':
+                rb = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['ulBandwidth']
+                rb_list.append(rb)
+            elif dir == 'dl':
+                rb = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['dlBandwidth']
+                rb_list.append(rb)
+        return rb_list
 
-    def get_cell_bw(self):
-        rb = self.get_cell_rb()
-        if rb == 6:
-            return 1.4
-        elif rb == 25:
-            return 5
-        elif rb == 50:
-            return 10
-        elif rb == 75:
-            return  15
-        elif rb == 100:
-            return 20
-
-    def get_cell_rbg_size(self):
-        rb = self.get_cell_rb()
-        if rb == 6:
-            return 1
-        elif rb == 25:
-            return 2
-        elif rb == 50:
-            return 3
-        elif rb == 75:
-            return 4
-        elif rb == 100:
-            return 4
-
-    def get_cell_freq(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue][
-                'ulFreq']
-        else:
-            return self.data['hits']['hits'][0]['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue][
-                'dlFreq']
-
-    def get_cell_power(self):
-        if self.dir == 'ul':
-            return self.data['hits']['hits'][0]['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue][
-                'ulPuschPower']
-        else:
-            return self.data['hits']['hits'][0]['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue][
-                'dlPdschPower']
-
-    def get_cell_band(self):
-        return self.data['hits']['hits'][0]['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue][
-            'eutraBand']
-
-    def get_cell_maxmcs(self):
-        if self.dir == 'dl':
-            return 28
-        elif self.data['hits']['hits'][0]['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue][
-                'enable64QAM'] == 0:
-            return 16
-        else:
-            return 28
-
-
-
-
-
-
-
-
+    def get_interval(self):
+        # pp = pprint.PrettyPrinter(indent=4)
+        # pp.pprint(self.data)
+        for i in self.data['hits']['hits']:
+            if self.key == 'num_enb':
+                value = i['_source']['eNB_config']
+                self.value_list.append(len(i))
+            elif self.key == 'cell_rb':
+                if self.dir == 'ul':
+                    value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['ulBandwidth']
+                elif self.dir == 'dl':
+                    value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['dlBandwidth']
+                self.value_list.append(value)
+            # elif self.key == 'cell_bw':
+            #    rb = self.get_cell_rb()
+            #    print rb
+            #    for i in rb:
+            #        if i == 6:
+            #            value_bw = 1.4
+            #        elif i == 25:
+            #            value_bw = 5
+            #        elif i == 50:
+            #            print "masuk????"
+            #            value_bw = 10
+            #        elif i == 75:
+            #            value_bw = 15
+            #        elif i == 100:
+            #            value_bw = 20
+            #    self.value_list.append(value_bw)
+            # elif self.key == 'cell_rbg_size':
+            #    rb = self.get_cell_rb()
+            #    if rb == 6:
+            #        value = 1
+            #    elif rb == 25:
+            #        value = 2
+            #    elif rb == 50:
+            #        value = 3
+            #    elif rb == 75:
+            #        value = 4
+            #    elif rb == 100:
+            #        value = 4
+            #    self.value_list.append(value)
+            elif self.key == 'cell_freq':
+                if self.dir == 'ul':
+                    value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['ulFreq']
+                elif self.dir == 'dl':
+                    value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['dlFreq']
+                self.value_list.append(value)
+            elif self.key == 'cell_power':
+                if self.dir == 'ul':
+                    value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['ulPuschPower']
+                elif self.dir == 'dl':
+                    value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['dlPdschPower']
+                self.value_list.append(value)
+            elif self.key == 'cell_band':
+                value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['eutraBand']
+                self.value_list.append(value)
+            elif self.key == 'cell_maxmcs':
+                if self.dir == 'dl':
+                    value = 28
+                elif i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['enable64QAM'] == 0:
+                    value = 16
+                else:
+                    value = 28
+                self.value_list.append(value)
+        return self.value_list

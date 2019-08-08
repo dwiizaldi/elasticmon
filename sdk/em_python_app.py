@@ -1,7 +1,7 @@
 import argparse
 from lib import elasticmon_python_sdk_git
 
-result = {}
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--enb', metavar='enb', action='store', type=int, required=False, default='0')
@@ -14,55 +14,22 @@ parser.add_argument('--dir', metavar='direction', action='store', type=str, requ
 
 args = parser.parse_args()
 
+try:
+    init = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                               t_start=args.t_start, t_end=args.t_end, dir=args.dir)
+except:
+    init = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
+                                                t_start=args.t_start, t_end=args.t_end, dir=args.dir)
+
 if args.func == 'average':
-    try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_avg()
-    except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_avg()
-    print args.func + " value is " + str(value)
-
+    print args.func + " value is " + str(init.get_avg())
 elif args.func == 'max':
-    try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_max()
-    except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_max()
-    print args.func + " value is " + str(value)
-
+    print args.func + " value is " + str(init.get_max())
 elif args.func == 'min':
-    try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_min()
-    except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_min()
-    print args.func + " value is " + str(value)
-
+    print args.func + " value is " + str(init.get_min())
 elif args.func == 'count':
-    try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_count()
-    except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_count()
-    print args.func + " value is " + str(value)
-
+    print args.func + " value is " + str(init.get_count())
 elif args.func == 'sum':
-    try:
-        value = elasticmon_python_sdk_git.mac_stats(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                    t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_sum()
-    except:
-        value = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                     t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_sum()
-    print args.func + " value is " + str(value)
-
-elif args.func == 'latest':
-    if args.key == 'cell_rb':
-        a = elasticmon_python_sdk_git.enb_config(enb=args.enb, ue=args.ue, key=args.key, func=args.func,
-                                                 t_start=args.t_start, t_end=args.t_end, dir=args.dir).get_cell_rb()
-        print args.func + " value is " + str(a)
-    else:
-        print "yaaaaaa"
+    print args.func + " value is " + str(init.get_sum())
+elif args.func == 'interval':
+    print args.func + " value is " + str(init.get_interval())
