@@ -11,8 +11,7 @@ class check_key(object):
     key_mac_stats = ['rnti', 'phr', 'wbcqi', 'rsrp', 'rsrq', 'enb_sfn', 'pdcp_sfn', 'ue_pdcp_pkt', 'ue_pdcp_pkt_bytes',
                      'ue_pdcp_pkt_sn', 'ue_pdcp_pkt_w', 'ue_pdcp_pkt_aiat', 'ue_pdcp_pkt_bytes_w', 'ue_pdcp_pkt_aiat_w',
                      'ue_pdcp_pkt_oo']
-    key_enb_config = ['cell_rb', 'cell_freq', 'cell_power', 'cell_band', 'cell_maxmcs', 'num_enb', 'cell_bw',
-                      'cell_rbg_size']
+    key_enb_config = ['cell_rb', 'cell_freq', 'cell_power', 'cell_band', 'cell_maxmcs', 'num_enb']
 
 
 class mac_stats(object):
@@ -135,72 +134,72 @@ class mac_stats(object):
     def get_count(self):
         return self.data['aggregations']['value_in_range']['buckets'][0]['stats_value']['count']
 
-    def get_interval(self):
+    def get_range(self, key):
         for i in self.data['hits']['hits']:
-            if self.key == 'rnti':
+            if key == 'rnti':
                 value = i['_source']['mac_stats']['rnti']
                 self.value_list.append(value)
-            elif self.key == 'phr':
+            elif key == 'phr':
                 value = i['_source']['mac_stats']['mac_stats']['phr']
                 self.value_list.append(value)
-            elif self.key == 'wbcqi':
+            elif key == 'wbcqi':
                 value = i['_source']['mac_stats']['mac_stats']['dlCqiReport']['csiReport'][self.ue]['p10csi']['wbCqi']
                 self.value_list.append(value)
-            elif self.key == 'rsrp':
+            elif key == 'rsrp':
                 value = i['_source']['mac_stats']['mac_stats']['rrcMeasurements']['pcellRsrp']
                 self.value_list.append(value)
-            elif self.key == 'rsrq':
+            elif key == 'rsrq':
                 value = i['_source']['mac_stats']['mac_stats']['rrcMeasurements']['pcellRsrq']
                 self.value_list.append(value)
-            elif self.key == 'enb_sfn':
+            elif key == 'enb_sfn':
                 value = i['_source']['mac_stats']['mac_stats']['dlCqiReport']['sfnSn']
                 self.value_list.append(value)
-            elif self.key == 'enb_pdcp_sfn':
+            elif key == 'enb_pdcp_sfn':
                 value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['sfn']
                 self.value_list.append(value)
-            elif self.key == 'ue_pdcp_pkt':
+            elif key == 'ue_pdcp_pkt':
                 if self.dir == 'ul':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRx']
                 elif self.dir == 'dl':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTx']
                 self.value_list.append(value)
-            elif self.key == 'ue_pdcp_pkt_bytes':
+            elif key == 'ue_pdcp_pkt_bytes':
                 if self.dir == 'ul':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxBytes']
                 elif self.dir == 'dl':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxBytes']
                 self.value_list.append(value)
-            elif self.key == 'ue_pdcp_pkt_sn':
+            elif key == 'ue_pdcp_pkt_sn':
                 if self.dir == 'ul':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxSn']
                 elif self.dir == 'dl':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxSn']
                 self.value_list.append(value)
-            elif self.key == 'ue_pdcp_pkt_w':
+            elif key == 'ue_pdcp_pkt_w':
                 if self.dir == 'ul':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxW']
                 elif self.dir == 'dl':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxW']
                 self.value_list.append(value)
-            elif self.key == 'ue_pdcp_pkt_aiat':
+            elif key == 'ue_pdcp_pkt_aiat':
                 if self.dir == 'ul':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxAiat']
                 elif self.dir == 'dl':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxAiat']
                 self.value_list.append(value)
-            elif self.key == 'ue_pdcp_pkt_bytes_w':
+            elif key == 'ue_pdcp_pkt_bytes_w':
                 if self.dir == 'ul':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxBytesW']
                 elif self.dir == 'dl':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxBytesW']
                 self.value_list.append(value)
-            elif self.key == 'ue_pdcp_pkt_aiat_w':
+            elif key == 'ue_pdcp_pkt_aiat_w':
                 if self.dir == 'ul':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxAiatW']
                 elif self.dir == 'dl':
                     value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktTxAiatW']
                 self.value_list.append(value)
-            elif self.key == 'ue_pdcp_pkt_oo':
+            elif key == 'ue_pdcp_pkt_oo':
                 value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxOo']
                 self.value_list.append(value)
         return self.value_list
@@ -250,7 +249,9 @@ class enb_config(object):
             return error
 
     def get_path_key(self):
-        if self.key == 'cell_rb':
+        if self.key == 'num_enb':
+            path = ''
+        elif self.key == 'cell_rb':
             if self.dir == 'ul':
                 path = 'eNB.cellConfig.ulBandwidth'
             else:
@@ -267,6 +268,8 @@ class enb_config(object):
                 path = 'eNB.cellConfig.dlPdschPower'
         elif self.key == 'cell_band':
             path = 'eNB.cellConfig.eutraBand'
+        elif self.key == 'cell_maxmcs':
+            path = 'eNB.cellConfig.enable64QAM'
         return path
 
     def get_avg(self):
@@ -297,64 +300,33 @@ class enb_config(object):
                 rb_list.append(rb)
         return rb_list
 
-    def get_interval(self):
-        # pp = pprint.PrettyPrinter(indent=4)
-        # pp.pprint(self.data)
+    def get_range(self, key):
         for i in self.data['hits']['hits']:
-            if self.key == 'num_enb':
+            if key == 'num_enb':
                 value = i['_source']['eNB_config']
                 self.value_list.append(len(i))
-            elif self.key == 'cell_rb':
+            elif key == 'cell_rb':
                 if self.dir == 'ul':
                     value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['ulBandwidth']
                 elif self.dir == 'dl':
                     value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['dlBandwidth']
                 self.value_list.append(value)
-            # elif self.key == 'cell_bw':
-            #    rb = self.get_cell_rb()
-            #    print rb
-            #    for i in rb:
-            #        if i == 6:
-            #            value_bw = 1.4
-            #        elif i == 25:
-            #            value_bw = 5
-            #        elif i == 50:
-            #            print "masuk????"
-            #            value_bw = 10
-            #        elif i == 75:
-            #            value_bw = 15
-            #        elif i == 100:
-            #            value_bw = 20
-            #    self.value_list.append(value_bw)
-            # elif self.key == 'cell_rbg_size':
-            #    rb = self.get_cell_rb()
-            #    if rb == 6:
-            #        value = 1
-            #    elif rb == 25:
-            #        value = 2
-            #    elif rb == 50:
-            #        value = 3
-            #    elif rb == 75:
-            #        value = 4
-            #    elif rb == 100:
-            #        value = 4
-            #    self.value_list.append(value)
-            elif self.key == 'cell_freq':
+            elif key == 'cell_freq':
                 if self.dir == 'ul':
                     value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['ulFreq']
                 elif self.dir == 'dl':
                     value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['dlFreq']
                 self.value_list.append(value)
-            elif self.key == 'cell_power':
+            elif key == 'cell_power':
                 if self.dir == 'ul':
                     value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['ulPuschPower']
                 elif self.dir == 'dl':
                     value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['dlPdschPower']
                 self.value_list.append(value)
-            elif self.key == 'cell_band':
+            elif key == 'cell_band':
                 value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['eutraBand']
                 self.value_list.append(value)
-            elif self.key == 'cell_maxmcs':
+            elif key == 'cell_maxmcs':
                 if self.dir == 'dl':
                     value = 28
                 elif i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['enable64QAM'] == 0:

@@ -31,5 +31,5 @@ elif args.func == 'count':
     print args.func + " value is " + str(init.get_count())
 elif args.func == 'sum':
     print args.func + " value is " + str(init.get_sum())
-elif args.func == 'interval':
-    print args.func + " value is " + str(init.get_interval())
+elif args.func == 'range':
+    print args.func + " value is " + str(init.get_range(args.key))
