@@ -1,32 +1,35 @@
 import requests
 import pprint
 
+
 class url_api(object):
 
     url_mac_stats = 'http://192.168.12.98:9200/mac_stats/_search'
     url_enb_config = 'http://192.168.12.98:9200/enb_config/_search'
 
+
 class check_key(object):
 
     key_mac_stats = ['rnti', 'phr', 'wbcqi', 'rsrp', 'rsrq', 'enb_sfn', 'pdcp_sfn', 'ue_pdcp_pkt', 'ue_pdcp_pkt_bytes',
                      'ue_pdcp_pkt_sn', 'ue_pdcp_pkt_w', 'ue_pdcp_pkt_aiat', 'ue_pdcp_pkt_bytes_w', 'ue_pdcp_pkt_aiat_w',
-                     'ue_pdcp_pkt_oo']
+                     'ue_pdcp_pkt_oo', 'txqueuesize', 'num_ue_lc']
     key_enb_config = ['cell_rb', 'cell_freq', 'cell_power', 'cell_band', 'cell_maxmcs', 'num_enb']
 
 
 class mac_stats(object):
 
-    def __init__(self, enb, ue, key, func, t_start, t_end, dir):
+    def __init__(self, enb, ue, key, t_start, t_end, dir):
         super(mac_stats, self).__init__()
         self.data = []
         self.enb = enb
         self.ue = ue
         self.key = key
-        self.func = func
         self.t_start = t_start
         self.t_end = t_end
         self.dir = dir
         self.value_list = []
+        self.date_list = []
+        self.txqueuesize_list = []
 
         if self.key in check_key.key_mac_stats:
             self.path_key = self.get_path_key()
@@ -115,6 +118,10 @@ class mac_stats(object):
                 path = 'pdcpStats.pktRxOo'
             else:
                 path = 'pdcpStats.pktRxOo'
+        elif self.key == 'txqueuesize':
+            path = 'rlcReport.txQueueSize'
+        elif self.key == 'num_ue_lc':
+            path = 'rlcReport'
         else:
             return 0
         return path
@@ -136,6 +143,8 @@ class mac_stats(object):
 
     def get_range(self, key):
         for i in self.data['hits']['hits']:
+            date_time = i['_source']['date_time']
+            self.date_list.append(date_time)
             if key == 'rnti':
                 value = i['_source']['mac_stats']['rnti']
                 self.value_list.append(value)
@@ -202,18 +211,30 @@ class mac_stats(object):
             elif key == 'ue_pdcp_pkt_oo':
                 value = i['_source']['mac_stats']['mac_stats']['pdcpStats']['pktRxOo']
                 self.value_list.append(value)
+            elif key == 'txqueuesize':
+                value = i['_source']['mac_stats']['mac_stats']['rlcReport'][0]['txQueueSize']
+                self.value_list.append(value)
+            elif key == 'num_ue_lc':
+                value = i['_source']['mac_stats']['mac_stats']['rlcReport']
+                self.value_list.append(len(value))
+        # return json.dumps(self.date_list), self.value_list
         return self.value_list
+
+    def get_avg_txqueuesize(self, lc):
+        for i in self.data['hits']['hits']:
+            value = i['_source']['mac_stats']['mac_stats']['rlcReport'][lc]['txQueueSize']
+            self.txqueuesize_list.append(value)
+        return sum(self.txqueuesize_list) / len(self.txqueuesize_list)
 
 
 class enb_config(object):
 
-    def __init__(self, enb, ue, key, func, t_start, t_end, dir):
+    def __init__(self, enb, ue, key, t_start, t_end, dir):
         super(enb_config, self).__init__()
         self.data = []
         self.enb = enb
         self.ue = ue
         self.key = key
-        self.func = func
         self.t_start = t_start
         self.t_end = t_end
         self.dir = dir
@@ -304,7 +325,7 @@ class enb_config(object):
         for i in self.data['hits']['hits']:
             if key == 'num_enb':
                 value = i['_source']['eNB_config']
-                self.value_list.append(len(i))
+                self.value_list.append(len(value))
             elif key == 'cell_rb':
                 if self.dir == 'ul':
                     value = i['_source']['eNB_config'][self.enb]['eNB']['cellConfig'][self.ue]['ulBandwidth']
