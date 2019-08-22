@@ -21,7 +21,7 @@ class qos_app(object):
     ue_dlwcqi = []
     ue_avg_dlwcqi = 0
     ue_phr = ''
-    ue_rnti = ''
+    ue_rnti = []
     ue_dlmcs = ''
     ue_dlrb = 0
     ue_dltbs = {}
@@ -38,27 +38,29 @@ class qos_app(object):
     slice_dlrb_share = {}
 
     # variable to monitor
-    monitor_key = 'wbcqi'
-    start = '30h'
+    start = '10s'
     end = '0s'
     dir = 'dl'
     threshold_wbcqi = 13
     lc = 0
 
     def get_statistic(self):
-        cqi_stats = elasticmon_sdk.mac_stats(enb=0, ue=0, key='wbcqi', t_start=qos_app.start,
-                                             t_end=qos_app.end, dir=qos_app.dir)
+        cqi_stats = elasticmon_sdk.mac_stats(enb=0, ue=0, key='wbcqi', t_start=qos_app.start, t_end=qos_app.end,
+                                             dir=qos_app.dir)
+        rnti_stats = elasticmon_sdk.mac_stats(enb=0, ue=0, key='rnti', t_start=qos_app.start, t_end=qos_app.end,
+                                              dir=qos_app.dir)
         rb_config = elasticmon_sdk.enb_config(enb=0, ue=0, key='cell_rb', t_start=qos_app.start, t_end=qos_app.end,
                                               dir=qos_app.dir)
         txqsize_stats = elasticmon_sdk.mac_stats(enb=0, ue=0, key='txqueuesize', t_start=qos_app.start,
                                                  t_end=qos_app.end, dir=qos_app.dir)
         try:
-            qos_app.ue_dlwcqi = cqi_stats.get_range(qos_app.monitor_key)
+            qos_app.ue_dlwcqi = cqi_stats.get_range('wbcqi')
             qos_app.ue_avg_dlwcqi = int(cqi_stats.get_avg())
+            qos_app.ue_rnti = rnti_stats.get_range('rnti')
             qos_app.enb_dlrb = int(rb_config.get_avg())
             qos_app.ue_lc_txqsize = txqsize_stats.get_avg_txqueuesize(qos_app.lc)
-            # print qos_app.ue_dlwcqi
             print "avg dlwcqi is " + str(qos_app.ue_avg_dlwcqi)
+            print "range of rnti is " + str(qos_app.ue_rnti)
             print "enb dlrb is " + str(qos_app.enb_dlrb)
             print "ue lc txqsize is " + str(qos_app.ue_lc_txqsize)
         except:
@@ -82,8 +84,8 @@ class qos_app(object):
         else:
             print "None action taken"
 
-    # def associate_ue(self):
-    #    rrm.associate_ues_slices(0, qos_app.ue_rnti[0])
+    def associate_ue(self):
+        rrm.associate_ues_slices(0, qos_app.ue_rnti[0])
 
     def monitor_ue_qos(self):
         # read
@@ -98,7 +100,7 @@ class qos_app(object):
                 else:
                     print 'Relax, everything is under control'
         else:
-            pass
+            print "None data within this period"
 
     def calculate_req_rb(self):
         qos_app.enb_available_dlrb = qos_app.enb_dlrb # following the rrm_kpi_app code
@@ -116,7 +118,6 @@ class qos_app(object):
 
         qos_app.ue_dlrb += qos_app.lc_ue_dlrb
         qos_app.enb_available_dlrb -= qos_app.ue_dlrb
-
 
     def calculate_throughput(self):
         qos_app.enb_available_dlrb = qos_app.enb_dlrb
@@ -143,6 +144,7 @@ class qos_app(object):
         run_app = qos_app()
         run_app.get_statistic()
         run_app.update_slice(percentage=5)
+        # run_app.associate_ue()
         run_app.monitor_ue_qos()
         run_app.calculate_throughput()
 
@@ -272,7 +274,7 @@ if __name__ == '__main__':
 
     log = flexran_sdk.logger(log_level=args.log).init_logger()
 
-    # rrm = flexran_sdk.rrm_policy(log=args.log, url=args.url, port=args.port, op_mode=args.op_mode)
+    rrm = flexran_sdk.rrm_policy(log=args.log, url=args.url, port=args.port, op_mode=args.op_mode)
 
     app_open_data = app_sdk.app_builder(log=log, app=qos_app.name, address=args.url, port=args.port)
 
